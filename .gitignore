@@ -1,0 +1,6 @@
+.DS_Store
+build/**
+miniaudio/
+wavetable.dSYM/
+wavetables/
+.vscode/

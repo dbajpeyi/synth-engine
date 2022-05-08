@@ -1,11 +1,32 @@
-#ifndef synth_h
-#define synth_h
 
+#ifndef wavetable_h
+#define wavetable_h
+
+#define TABLE_LENGTH 256
 #define CONCERT_A_FREQ 440.000000
 #define SEMITONE_RATIO pow(2.0, 1.0/12.0)
 #define PI 3.14159265358979323846264
 #define NUM_CHANNELS 1
 #define SAMPLE_RATE 44100.0
+
+
+typedef enum {
+	sine = 0,
+	saw,
+	custom,
+	square,
+	triangle,
+} WaveType;
+
+float sawtooth(float phase);
+
+void generateWaveTable(float* waveTable, WaveType waveType);
+
+float* readWaveTableFromFile(const char* filePath, int* tableLength);
+
+float interpolateLinearly(float* waveTable, float index, int tableLength);
+
+void writeCustomWaveform(float *waveTable, int tableLength);
 
 typedef struct {
 	float left;

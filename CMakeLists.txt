@@ -9,6 +9,6 @@ set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
 set(CMAKE_C_COMPILER "gcc")
 include(CPack)
 
-add_executable(Synth wavetable.c synth.c)
+add_executable(Synth example.c wavetable.c)
 
 

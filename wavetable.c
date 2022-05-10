@@ -77,7 +77,7 @@ float* readWaveTableFromFile(const char* filePath, int* tableLength) {
 	return waveTable;
 }
 
-float interpolateLinearly(float* waveTable, float index, int tableLength) {
+float lookupTable(float* waveTable, float index, int tableLength) {
 	int nearestLow = (int) floor(index);
 	int nearestHigh = fmod(nearestLow + 1, tableLength);
 	float nearestHighWeight = index - nearestLow;

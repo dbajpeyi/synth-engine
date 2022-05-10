@@ -24,7 +24,7 @@ void generateWaveTable(float* waveTable, WaveType waveType);
 
 float* readWaveTableFromFile(const char* filePath, int* tableLength);
 
-float interpolateLinearly(float* waveTable, float index, int tableLength);
+float lookupTable(float* waveTable, float index, int tableLength);
 
 void writeCustomWaveform(float *waveTable, int tableLength);
 

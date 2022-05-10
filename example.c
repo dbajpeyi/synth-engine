@@ -39,7 +39,7 @@ int main(int argc, char const *argv[])
 	float tableValue;
 	while (j < numSamples)
 	{
-		tableValue = interpolateLinearly(waveTable, tableIndex, tableLength);
+		tableValue = lookupTable(waveTable, tableIndex, tableLength);
 		output[j++] = amplitude * tableValue;
 		tableIndex += indexIncrement;
 		tableIndex = fmod(tableIndex, tableLength);

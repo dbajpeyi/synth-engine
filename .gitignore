@@ -4,3 +4,5 @@ miniaudio/
 wavetable.dSYM/
 wavetables/
 .vscode/
+*.out
+*.dSYM/

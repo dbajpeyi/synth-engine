@@ -4,6 +4,9 @@
 #include "miniaudio/miniaudio.h"
 #include "wavetable.h"
 
+#define INDEX_INCREMENT(freq) (freq *  (TABLE_LENGTH / SAMPLE_RATE))
+
+
 float getC0Frequency()
 {
 	const float c5NoteHz = (CONCERT_A_FREQ / 2.0) * pow(SEMITONE_RATIO, 3.0);
@@ -12,8 +15,9 @@ float getC0Frequency()
 
 float getFrequencyFromMidiNote(int midiNote)
 {
-	float c0NoteHz, c5NoteHz, freq;
-	freq = getC0Frequency() * pow(SEMITONE_RATIO, midiNote);
+	float c0NoteHz, freq;
+	c0NoteHz = getC0Frequency();
+	freq = c0NoteHz * pow(SEMITONE_RATIO, midiNote);
 	return freq;
 }
 

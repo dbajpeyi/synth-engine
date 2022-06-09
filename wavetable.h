@@ -2,12 +2,12 @@
 #ifndef wavetable_h
 #define wavetable_h
 
-#define TABLE_LENGTH 256
+#define TABLE_LENGTH 512
 #define CONCERT_A_FREQ 440.000000
 #define SEMITONE_RATIO pow(2.0, 1.0/12.0)
 #define PI 3.14159265358979323846264
 #define NUM_CHANNELS 1
-#define SAMPLE_RATE 44100.0
+#define SAMPLE_RATE 48000.0
 
 
 typedef enum {

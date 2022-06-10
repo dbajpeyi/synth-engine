@@ -8,8 +8,7 @@
 #include <sys/time.h>
 #include <math.h>
 
-#define NUM_FRAMES_IN_BUFFER 512
-
+#define RING_BUFFER_CHUNK_SIZE 1024
 
 typedef struct {
 	float* note;
@@ -18,16 +17,28 @@ typedef struct {
 	ma_uint32 numSamplesInNote;
 } SequencerData;
 
+typedef struct {
+	ma_pcm_rb* ringBuffer;
+	ma_uint32 numSamplesInNote;
+} CallbackData;
+
 
 void data_callback(ma_device *pDevice, void *pOutput, const void *pInput, ma_uint32 frameCount)
 {
-	ma_pcm_rb *uData = (ma_pcm_rb*) pDevice->pUserData;
+	CallbackData *uData = (CallbackData*) pDevice->pUserData;
+
 	void* readBuffer;
-	ma_pcm_rb_acquire_read(uData, &frameCount, &readBuffer);
-	{
-		memcpy(pOutput, readBuffer, frameCount * ma_get_bytes_per_frame(pDevice->playback.format, pDevice->playback.channels));
+	ma_uint32 framesAvailableInRingBuffer = ma_pcm_rb_available_read(uData->ringBuffer);
+	if (framesAvailableInRingBuffer < frameCount) {
+		printf("Not enough data in ring buffer\n");
+	} else {
+		printf("Reading %d frames from ring buffer\n", framesAvailableInRingBuffer);
+		ma_pcm_rb_acquire_read(uData->ringBuffer, &framesAvailableInRingBuffer , &readBuffer);
+		{
+			memcpy(pOutput, readBuffer,  framesAvailableInRingBuffer * ma_get_bytes_per_frame(pDevice->playback.format, pDevice->playback.channels));
+		}
+		ma_pcm_rb_commit_read(uData->ringBuffer , framesAvailableInRingBuffer);
 	}
-	ma_pcm_rb_commit_read(uData ,frameCount);
 
 	/* In this example the format and channel count are the same for both input and output which means we can just memcpy(). */
 	(void)pInput;
@@ -46,23 +57,22 @@ void *startSequencer(void *data)
 	int i = 0;
 	struct timeval startTime, currentTime;
 	double elapsedTime;
-	int remainedTime;
-	printf("\n%f", secondsPerBeat);
+	double remainedTime;
 	gettimeofday(&startTime, NULL);
 	while (j < 10)
 	{
 		gettimeofday(&currentTime, NULL);
 		elapsedTime = ((currentTime.tv_sec * 1e6 + currentTime.tv_usec) - (startTime.tv_sec * 1e6 + startTime.tv_usec));
-		remainedTime = (int)fmod(elapsedTime, secondsPerBeat * 1e6);
+		remainedTime = fmod(elapsedTime, secondsPerBeat * 1e6);
 		void* bufferOut;
 
-		if (remainedTime == 0)
+		if (remainedTime >= 0 && remainedTime < 1)
 		{
 			ma_pcm_rb_reset(ringBuffer);
 			ma_pcm_rb_acquire_write(ringBuffer, &numSamplesInNote, &bufferOut);
 			{
-				// TODO: debug ring buffer
-				MA_COPY_MEMORY(bufferOut, note, numSamplesInNote * ma_get_bytes_per_frame(ma_format_f32, NUM_CHANNELS));
+				ma_copy_pcm_frames(bufferOut, note, numSamplesInNote, ma_format_f32, NUM_CHANNELS);
+				// MA_COPY_MEMORY(bufferOut, note, numSamplesInNote * ma_get_bytes_per_frame(ma_format_f32, NUM_CHANNELS));
 			}
 			ma_pcm_rb_commit_write(ringBuffer, numSamplesInNote);
 			j++;
@@ -87,10 +97,12 @@ int main(int argc, char const *argv[])
 	float bpm = atof(argv[3]);
 	float duration = atof(argv[5]);
 	ma_pcm_rb ringBuffer;
+	ma_pcm_rb_init(ma_format_f32, NUM_CHANNELS, RING_BUFFER_CHUNK_SIZE, NULL, NULL, &ringBuffer);
 
 	ma_device device;
 	ma_device_config deviceConfig;
 	ma_uint32 numSamples = (ma_uint32) SAMPLE_RATE * duration * NUM_CHANNELS;
+
 
 	waveTable = (float*) malloc(TABLE_LENGTH * ma_get_bytes_per_frame(ma_format_f32, NUM_CHANNELS));
 	generateWaveTable(waveTable, waveType);
@@ -104,12 +116,14 @@ int main(int argc, char const *argv[])
 
 	pthread_create(&thread_id, NULL, startSequencer, (void*) &data);
 
+	CallbackData callbackData = { &ringBuffer, numSamples };
+
 	deviceConfig = ma_device_config_init(ma_device_type_playback);
 	deviceConfig.playback.format = ma_format_f32;
 	deviceConfig.playback.channels = NUM_CHANNELS;
 	deviceConfig.sampleRate = SAMPLE_RATE;
 	deviceConfig.dataCallback = data_callback;
-	deviceConfig.pUserData = &ringBuffer;
+	deviceConfig.pUserData = &callbackData;
 
 	if (ma_device_init(NULL, &deviceConfig, &device) != MA_SUCCESS)
 	{

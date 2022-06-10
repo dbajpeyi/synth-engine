@@ -3,28 +3,45 @@
 #include <stdlib.h>
 #include "wavetable.h"
 #include "miniaudio/miniaudio.h"
+#include "oscillator.h"
 #include <pthread.h>
 #include <sys/time.h>
 #include <math.h>
 
 #define NUM_FRAMES_IN_BUFFER 512
 
-ma_pcm_rb g_rb;
+
+typedef struct {
+	float* note;
+	float bpm;
+	ma_pcm_rb* ringBuffer;
+	ma_uint32 numSamplesInNote;
+} SequencerData;
+
 
 void data_callback(ma_device *pDevice, void *pOutput, const void *pInput, ma_uint32 frameCount)
 {
-	float *uData = (float*) pDevice->pUserData;
+	ma_pcm_rb *uData = (ma_pcm_rb*) pDevice->pUserData;
+	void* readBuffer;
+	ma_pcm_rb_acquire_read(uData, &frameCount, &readBuffer);
+	{
+		memcpy(pOutput, readBuffer, frameCount * ma_get_bytes_per_frame(pDevice->playback.format, pDevice->playback.channels));
+	}
+	ma_pcm_rb_commit_read(uData ,frameCount);
 
 	/* In this example the format and channel count are the same for both input and output which means we can just memcpy(). */
-	MA_COPY_MEMORY(pOutput, uData, frameCount * ma_get_bytes_per_frame(ma_format_f32, NUM_CHANNELS));
 	(void)pInput;
 }
 
-void *fillBlock(void *bpm)
+void *startSequencer(void *data)
 {
-	const int maxSteps = 16;
-	const float *bpm2 = (float *)bpm;
-	float secondsPerBeat = 1.0 / (*(bpm2) / 60);
+	SequencerData *seqData = (SequencerData *) data;
+	float bpm = seqData->bpm;
+	float* note = seqData->note;
+	ma_pcm_rb* ringBuffer = seqData->ringBuffer;
+	ma_uint32 numSamplesInNote = seqData->numSamplesInNote;
+
+	float secondsPerBeat = 1.0 / (bpm / 60);
 	int j = 0;
 	int i = 0;
 	struct timeval startTime, currentTime;
@@ -37,11 +54,17 @@ void *fillBlock(void *bpm)
 		gettimeofday(&currentTime, NULL);
 		elapsedTime = ((currentTime.tv_sec * 1e6 + currentTime.tv_usec) - (startTime.tv_sec * 1e6 + startTime.tv_usec));
 		remainedTime = (int)fmod(elapsedTime, secondsPerBeat * 1e6);
+		void* bufferOut;
 
 		if (remainedTime == 0)
 		{
-			fprintf(stdout, "\nJ is %d", j);
-			// fprintf(stdout, "\n currentTime: %lf, elapsedTime: %lf, remainedTime: %d", currentTime.tv_sec * 1e6, elapsedTime, remainedTime);
+			ma_pcm_rb_reset(ringBuffer);
+			ma_pcm_rb_acquire_write(ringBuffer, &numSamplesInNote, &bufferOut);
+			{
+				// TODO: debug ring buffer
+				MA_COPY_MEMORY(bufferOut, note, numSamplesInNote * ma_get_bytes_per_frame(ma_format_f32, NUM_CHANNELS));
+			}
+			ma_pcm_rb_commit_write(ringBuffer, numSamplesInNote);
 			j++;
 		}
 	}
@@ -50,9 +73,9 @@ void *fillBlock(void *bpm)
 
 int main(int argc, char const *argv[])
 {
-	if (argc < 7)
+	if (argc < 6)
 	{
-		printf("\n usage: wavetable gain(db) type tempo(bpm) midinote duration out");
+		printf("\n usage: wavetable gain(db) type tempo(bpm) midinote duration");
 		return -1;
 	}
 	pthread_t thread_id;
@@ -61,41 +84,32 @@ int main(int argc, char const *argv[])
 	WaveType waveType = atoi(argv[2]);
 	float *waveTable;
 	float currentNoteHz = getFrequencyFromMidiNote(atof(argv[4]));
-	printf("Current note %f", currentNoteHz);
 	float bpm = atof(argv[3]);
 	float duration = atof(argv[5]);
+	ma_pcm_rb ringBuffer;
 
 	ma_device device;
 	ma_device_config deviceConfig;
+	ma_uint32 numSamples = (ma_uint32) SAMPLE_RATE * duration * NUM_CHANNELS;
 
-	pthread_create(&thread_id, NULL, fillBlock, (void *)&bpm);
-
-	waveTable = (float*) malloc(TABLE_LENGTH * sizeof(float));
+	waveTable = (float*) malloc(TABLE_LENGTH * ma_get_bytes_per_frame(ma_format_f32, NUM_CHANNELS));
 	generateWaveTable(waveTable, waveType);
 
-	int numSamples = (int) SAMPLE_RATE * duration * NUM_CHANNELS;
+	Oscillator osc  = {currentNoteHz, waveTable};
+	float *note = malloc(numSamples * ma_get_bytes_per_frame(ma_format_f32, NUM_CHANNELS));
 
-	float *outputBuffer = malloc(numSamples * ma_get_bytes_per_frame(ma_format_f32, NUM_CHANNELS));
+	makeNote(osc, numSamples, note, amplitude);
 
-	float tableIndex = 0;
-	float indexIncrement = currentNoteHz * TABLE_LENGTH / SAMPLE_RATE;
-	int j = 0;
-	float tableValue;
+	SequencerData data = { note, bpm, &ringBuffer, numSamples };
 
-	while (j < numSamples)
-	{
-		tableValue = lookupTable(waveTable, tableIndex, TABLE_LENGTH);
-		outputBuffer[j++] = amplitude * tableValue;
-		tableIndex += indexIncrement;
-		tableIndex = fmod(tableIndex, TABLE_LENGTH);
-	}
+	pthread_create(&thread_id, NULL, startSequencer, (void*) &data);
 
 	deviceConfig = ma_device_config_init(ma_device_type_playback);
 	deviceConfig.playback.format = ma_format_f32;
 	deviceConfig.playback.channels = NUM_CHANNELS;
 	deviceConfig.sampleRate = SAMPLE_RATE;
 	deviceConfig.dataCallback = data_callback;
-	deviceConfig.pUserData = outputBuffer;
+	deviceConfig.pUserData = &ringBuffer;
 
 	if (ma_device_init(NULL, &deviceConfig, &device) != MA_SUCCESS)
 	{
@@ -110,24 +124,10 @@ int main(int argc, char const *argv[])
 		return -4;
 	}
 
-	ma_encoder encoder;
-	ma_encoder_config encoderConfig;
-
-	encoderConfig = ma_encoder_config_init(ma_encoding_format_wav, ma_format_f32, NUM_CHANNELS, SAMPLE_RATE);
-	if (ma_encoder_init_file(argv[6], &encoderConfig, &encoder) != MA_SUCCESS) {
-        printf("Failed to initialize output file.\n");
-        return -1;
-    }
-
-	if(ma_encoder_write_pcm_frames(&encoder, outputBuffer, numSamples, NULL) != MA_SUCCESS) {
-		printf("Couldn't write");
-		return -1;
-	}
 	pthread_join(thread_id, NULL);
 
 	ma_device_uninit(&device);
-	ma_encoder_uninit(&encoder);
-	free(outputBuffer);
+	free(note);
 	free(waveTable);
 	return 0;
 }

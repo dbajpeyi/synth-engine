@@ -2,6 +2,7 @@
 
 #include "miniaudio/miniaudio.h"
 #include "wavetable.h"
+#include "oscillator.h"
 #include <stdlib.h>
 
 
@@ -27,6 +28,7 @@ int main(int argc, char const *argv[]) {
   float indexIncrement;
   float tableValue;
   int j = 0;
+  Oscillator osc;
 
   ma_encoder encoder;
   ma_encoder_config encoderConfig;
@@ -44,13 +46,10 @@ int main(int argc, char const *argv[]) {
   output =
       malloc(numSamples * ma_get_bytes_per_frame(ma_format_f32, NUM_CHANNELS));
 
-  indexIncrement = freq * (tableLength / SAMPLE_RATE);
-  while (j < numSamples) {
-    tableValue = lookupTable(waveTable, tableIndex, tableLength);
-    output[j++] = amplitude * tableValue;
-    tableIndex += indexIncrement;
-    tableIndex = fmod(tableIndex, tableLength);
-  }
+  osc.freqHz = freq;
+  osc.waveTable = waveTable;
+
+  makeNote(osc, numSamples, output, amplitude);
 
   encoderConfig = ma_encoder_config_init(ma_encoding_format_wav, ma_format_f32,
                                          NUM_CHANNELS, SAMPLE_RATE);

@@ -122,7 +122,6 @@ int main(int argc, char const *argv[]) {
   ma_device device;
   ma_device_config deviceConfig;
   ma_uint32 numSamples = (ma_uint32)SAMPLE_RATE * duration * NUM_CHANNELS;
-
   ma_pcm_rb_init(ma_format_f32, NUM_CHANNELS, RING_BUFFER_CHUNK_SIZE, NULL,
                  NULL, &ringBuffer);
 

@@ -4,6 +4,8 @@
 #include "wavetable.h"
 #include <stdlib.h>
 
+
+
 int main(int argc, char const *argv[]) {
   if (argc < 6) {
     printf("\n usage: wavetable midi(0-127) gain(db) duration type outfile "
@@ -13,13 +15,21 @@ int main(int argc, char const *argv[]) {
 
   int midiNote = atoi(argv[1]);
   float freq = getFrequencyFromMidiNote(midiNote);
-  printf("\nFreq %f for midi note %d", freq, midiNote);
   float gain = atof(argv[2]);
   float amplitude = pow(10, gain / 20);
   float duration = atof(argv[3]);
   WaveType waveType = atoi(argv[4]);
   float *waveTable;
   int tableLength;
+  int numSamples;
+  float* output;
+  float tableIndex = 0;
+  float indexIncrement;
+  float tableValue;
+  int j = 0;
+
+  ma_encoder encoder;
+  ma_encoder_config encoderConfig;
 
   if (waveType == 2) {
     waveTable = readWaveTableFromFile(argv[6], &tableLength);
@@ -30,23 +40,17 @@ int main(int argc, char const *argv[]) {
     tableLength = TABLE_LENGTH;
   }
 
-  int numSamples = (int)SAMPLE_RATE * duration * NUM_CHANNELS;
-  float *output =
+  numSamples = (int)SAMPLE_RATE * duration * NUM_CHANNELS;
+  output =
       malloc(numSamples * ma_get_bytes_per_frame(ma_format_f32, NUM_CHANNELS));
 
-  float tableIndex = 0;
-  float indexIncrement = freq * (tableLength / SAMPLE_RATE);
-  int j = 0;
-  float tableValue;
+  indexIncrement = freq * (tableLength / SAMPLE_RATE);
   while (j < numSamples) {
     tableValue = lookupTable(waveTable, tableIndex, tableLength);
     output[j++] = amplitude * tableValue;
     tableIndex += indexIncrement;
     tableIndex = fmod(tableIndex, tableLength);
   }
-
-  ma_encoder encoder;
-  ma_encoder_config encoderConfig;
 
   encoderConfig = ma_encoder_config_init(ma_encoding_format_wav, ma_format_f32,
                                          NUM_CHANNELS, SAMPLE_RATE);

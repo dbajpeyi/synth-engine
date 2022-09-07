@@ -9,6 +9,9 @@
 #define NUM_CHANNELS 1
 #define SAMPLE_RATE 48000.0
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef enum {
 	sine = 0,
@@ -58,5 +61,9 @@ float getC0Frequency();
 int getMidiNoteFromFreq(float freq);
 
 StereoPanPosition getStereoPanPosition(float position);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

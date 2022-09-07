@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+
 #define INDEX_INCREMENT(freq) (freq * (TABLE_LENGTH / SAMPLE_RATE))
 
 float getC0Frequency() {

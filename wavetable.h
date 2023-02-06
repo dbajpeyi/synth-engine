@@ -29,7 +29,7 @@ float* readWaveTableFromFile(const char* filePath, int* tableLength);
 
 float lookupTable(float* waveTable, float index, int tableLength);
 
-void writeCustomWaveform(float *waveTable, int tableLength);
+void writeCustomWaveform(float *waveTable, int tableLength, const char* outfile);
 
 typedef struct {
 	float left;

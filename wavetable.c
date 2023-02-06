@@ -88,12 +88,12 @@ float lookupTable(float *waveTable, float index, int tableLength) {
          nearestLowWeight * waveTable[nearestLow];
 }
 
-void writeCustomWaveform(float *waveTable, int tableLength) {
+void writeCustomWaveform(float *waveTable, int tableLength, const char* outfile) {
   ma_encoder wEncoder;
   ma_encoder_config wEncoderConfig;
   wEncoderConfig = ma_encoder_config_init(ma_encoding_format_wav, ma_format_f32,
                                           NUM_CHANNELS, SAMPLE_RATE);
-  if (ma_encoder_init_file("waveform.wav", &wEncoderConfig, &wEncoder) !=
+  if (ma_encoder_init_file(outfile, &wEncoderConfig, &wEncoder) !=
       MA_SUCCESS) {
     printf("Failed to initialize output file.\n");
     exit(0);

@@ -1,12 +1,13 @@
 #define MINIAUDIO_IMPLEMENTATION
 
-#include "miniaudio/miniaudio.h"
-#include "oscillator.h"
-#include "wavetable.h"
 #include <math.h>
 #include <pthread.h>
 #include <stdlib.h>
 #include <sys/time.h>
+
+#include "miniaudio/miniaudio.h"
+#include "oscillator.h"
+#include "wavetable.h"
 
 #define RING_BUFFER_CHUNK_SIZE 1024
 

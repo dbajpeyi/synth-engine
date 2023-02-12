@@ -1,10 +1,11 @@
 #define MA_DEBUG_OUTPUT
 #define MINIAUDIO_IMPLEMENTATION
 
-#include "miniaudio/miniaudio.h"
-#include "synth.h"
 #include <stdio.h>
 #include <stdlib.h>
+
+#include "miniaudio/miniaudio.h"
+#include "synth.h"
 
 #define ERROR_ARGS 1
 #define ERROR_DECODER_INIT 2
@@ -18,7 +19,7 @@ enum { ARG_FILENAME, ARG_INPUT_FILE, ARG_OUTPUT_FILE, ARG_AMP };
 
 typedef struct {
   ma_decoder *decoder;
-  void **buffer; // for testing
+  void **buffer;  // for testing
   ma_uint64 *indexAddress;
   short *hasEnded;
   short *peakValue;
@@ -51,7 +52,6 @@ void dataCallback(ma_device *pDevice, void *pOutput, const void *pInput,
 }
 
 int main(int argc, char **argv) {
-
   ma_result result;
   ma_decoder decoder;
   short *outputBuffer;
@@ -109,7 +109,7 @@ int main(int argc, char **argv) {
   deviceConfig.playback.channels = decoder.outputChannels;
   deviceConfig.sampleRate = decoder.outputSampleRate;
   deviceConfig.dataCallback = dataCallback;
-  deviceConfig.pUserData = &userData; // pass the decoder as user data
+  deviceConfig.pUserData = &userData;  // pass the decoder as user data
 
   if (ma_device_init(NULL, &deviceConfig, &device) != MA_SUCCESS) {
     printf("\n Initializing device failed\n");
@@ -134,10 +134,8 @@ int main(int argc, char **argv) {
   while (i < trackingIndex) {
     sample = outputBuffer[i];
     dSample = (double)sample * amp;
-    if (dSample > 32767.0)
-      dSample = 32767.0;
-    if (dSample < -32767.0)
-      dSample = -32767.0;
+    if (dSample > 32767.0) dSample = 32767.0;
+    if (dSample < -32767.0) dSample = -32767.0;
     outputBuffer[i] = (short)dSample;
     i += 2;
   }

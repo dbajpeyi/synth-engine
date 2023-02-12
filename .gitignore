@@ -6,3 +6,4 @@ wavetables/
 .vscode/
 *.out
 *.dSYM/
+wavefiles/

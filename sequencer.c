@@ -135,7 +135,7 @@ int main(int argc, char const *argv[]) {
   note =
       malloc(numSamples * ma_get_bytes_per_frame(ma_format_f32, NUM_CHANNELS));
 
-  makeNote(osc, numSamples, note, amplitude);
+  fillNotes(osc, numSamples, note, amplitude);
 
   data.numSamplesInNote = numSamples;
   data.note = note;

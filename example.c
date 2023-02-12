@@ -35,7 +35,7 @@ int main(int argc, char const *argv[]) {
 
   if (waveType == 2) {
     waveTable = readWaveTableFromFile(argv[6], &tableLength);
-    writeCustomWaveform(waveTable, tableLength);
+    writeCustomWaveform(waveTable, tableLength, argv[5]);
   } else {
     waveTable = (float *)malloc(TABLE_LENGTH * sizeof(float));
     generateWaveTable(waveTable, waveType);
@@ -49,7 +49,9 @@ int main(int argc, char const *argv[]) {
   osc.freqHz = freq;
   osc.waveTable = waveTable;
 
-  makeNote(osc, numSamples, output, amplitude);
+  init(waveType);
+  noteOn(freq);
+  fillNotes(numSamples, output, amplitude);
 
   encoderConfig = ma_encoder_config_init(ma_encoding_format_wav, ma_format_f32,
                                          NUM_CHANNELS, SAMPLE_RATE);

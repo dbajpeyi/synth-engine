@@ -1,10 +1,12 @@
 
 #include "oscillator.h"
-#include "wavetable.h"
+
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include "wavetable.h"
 
 Voice voices[MAX_POLYPHONY] = {{0}};
 
@@ -59,10 +61,12 @@ void noteOff(float freqHz) {
 void fillNotes(int numSamples, float *output, float amplitude) {
   for (int i = 0; i < MAX_POLYPHONY; i++) {
     if (voices[i].status == ON) {
-      float indexIncrement = voices[i].osc.freqHz * (TABLE_LENGTH / SAMPLE_RATE);
+      float indexIncrement =
+          voices[i].osc.freqHz * (TABLE_LENGTH / SAMPLE_RATE);
       float tableIndex = 0;
       for (int k = 0; k < numSamples; k++) {
-        float tableValue = lookupTable(voices[i].osc.waveTable, tableIndex, TABLE_LENGTH);
+        float tableValue =
+            lookupTable(voices[i].osc.waveTable, tableIndex, TABLE_LENGTH);
         output[k] += amplitude * tableValue;
         tableIndex += indexIncrement;
         tableIndex = fmod(tableIndex, TABLE_LENGTH);
@@ -70,4 +74,3 @@ void fillNotes(int numSamples, float *output, float amplitude) {
     }
   }
 }
-

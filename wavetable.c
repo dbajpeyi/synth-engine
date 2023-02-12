@@ -1,10 +1,9 @@
 #include "wavetable.h"
-
+#include "miniaudio/miniaudio.h"
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "miniaudio/miniaudio.h"
 
 #define INDEX_INCREMENT(freq) (freq * (TABLE_LENGTH / SAMPLE_RATE))
 
@@ -89,13 +88,13 @@ float lookupTable(float *waveTable, float index, int tableLength) {
          nearestLowWeight * waveTable[nearestLow];
 }
 
-void writeCustomWaveform(float *waveTable, int tableLength,
-                         const char *outfile) {
+void writeCustomWaveform(float *waveTable, int tableLength, const char* outfile) {
   ma_encoder wEncoder;
   ma_encoder_config wEncoderConfig;
   wEncoderConfig = ma_encoder_config_init(ma_encoding_format_wav, ma_format_f32,
                                           NUM_CHANNELS, SAMPLE_RATE);
-  if (ma_encoder_init_file(outfile, &wEncoderConfig, &wEncoder) != MA_SUCCESS) {
+  if (ma_encoder_init_file(outfile, &wEncoderConfig, &wEncoder) !=
+      MA_SUCCESS) {
     printf("Failed to initialize output file.\n");
     exit(0);
   }

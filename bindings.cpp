@@ -1,9 +1,7 @@
-#include <emscripten/bind.h>
-
-#include <vector>
-
 #include "oscillator.h"
 #include "wavetable.h"
+#include <emscripten/bind.h>
+#include <vector>
 
 #define FRAMES_TO_RENDER_PER_LOOP 8
 
@@ -20,7 +18,7 @@ std::vector<float> renderFrames(int numSamples, float amplitude) {
   int startingFrames = numSamples;
   // while (startingFrames > FRAMES_TO_RENDER_PER_LOOP) {
   fillNotes(numSamples, buffer.data(), amplitude);
-  // startingFrames -= FRAMES_TO_RENDER_PER_LOOP;
+    // startingFrames -= FRAMES_TO_RENDER_PER_LOOP;
   // }
   return buffer;
 }

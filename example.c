@@ -1,16 +1,16 @@
 #define MINIAUDIO_IMPLEMENTATION
 
+#include "miniaudio/miniaudio.h"
+#include "wavetable.h"
+#include "oscillator.h"
 #include <stdlib.h>
 
-#include "miniaudio/miniaudio.h"
-#include "oscillator.h"
-#include "wavetable.h"
+
 
 int main(int argc, char const *argv[]) {
   if (argc < 6) {
-    printf(
-        "\n usage: wavetable midi(0-127) gain(db) duration type outfile "
-        "[tableName]");
+    printf("\n usage: wavetable midi(0-127) gain(db) duration type outfile "
+           "[tableName]");
     return -1;
   }
 
@@ -23,7 +23,7 @@ int main(int argc, char const *argv[]) {
   float *waveTable;
   int tableLength;
   int numSamples;
-  float *output;
+  float* output;
   float tableIndex = 0;
   float indexIncrement;
   float tableValue;

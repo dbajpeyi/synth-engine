@@ -1,10 +1,9 @@
 #define MINIAUDIO_IMPLEMENTATION
 
+#include "miniaudio/miniaudio.h"
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-#include "miniaudio/miniaudio.h"
 
 #define PI 3.14159265358979323846264
 
@@ -19,6 +18,7 @@
 // }
 
 int main(int argc, char **argv) {
+
   // ma_device device;
   // ma_device_config deviceConfig;
   double sampleRate = 44100.0;
@@ -63,7 +63,8 @@ int main(int argc, char **argv) {
     output[i] = maxAmp * sin(curPhase);
     fprintf(fp, "%d\t%.81f\n", i, output[i]);
     curPhase += 2 * PI * (freq / sampleRate);
-    if (curPhase >= 2 * PI) curPhase -= (2 * PI);
+    if (curPhase >= 2 * PI)
+      curPhase -= (2 * PI);
   }
 
   free(output);
